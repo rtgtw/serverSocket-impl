@@ -10,6 +10,13 @@
 #include <ws2tcpip.h>
 #include <iostream>
 
+//for threading
+#include <thread>
+
+//for  file stream to send files (output file stream)
+#include <fstream>
+
+
 
 
 
@@ -19,7 +26,13 @@ int main(int argc, char* argv[]) {
 	//Specify port number
 	int port = 55555;
 
-	//Initialize the DLL
+
+
+
+	//----------------------------------------------------------------------//
+	//----------------------------------------------------------------------//
+
+	//Initialize the Winsock DLL
 	//Create a wsaData variable to pass into WSAStartup
 	WSADATA wsaData;
 
@@ -40,6 +53,8 @@ int main(int argc, char* argv[]) {
 		std::cout << "The status: " << wsaData.szSystemStatus << std::endl;
 	}
 
+	//----------------------------------------------------------------------//
+	//----------------------------------------------------------------------//
 
 
 	//Create the Server Side Socket
@@ -48,7 +63,10 @@ int main(int argc, char* argv[]) {
 	//Create a socket variable and initialize it to invalid socket
 	//Right now the socket is unbound
 	SOCKET serverSocket;
+	//Socket is initialized ot null
 	serverSocket = INVALID_SOCKET;
+
+	//call socket function passing int, TCP or UDP, socket type and the protocol
 	serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (serverSocket == INVALID_SOCKET) {
 		std::cout << "Error at socket(): " << WSAGetLastError() << std::endl;
@@ -61,6 +79,10 @@ int main(int argc, char* argv[]) {
 	}
 
 
+	//----------------------------------------------------------------------//
+	//----------------------------------------------------------------------//
+
+
 
 
 	//Bind the socket.
@@ -71,10 +93,10 @@ int main(int argc, char* argv[]) {
 
 	//create a socket address service variable to store ip, port and socket type
 	sockaddr_in service;
+
+	//in the TCP family
 	service.sin_family = AF_INET;
 
-	//Test, loopback w/ actual IP
-	//IP
 
 	//Converts IP address to string binary
 	InetPton(AF_INET, (L"192.168.87.22"), &service.sin_addr.s_addr);
@@ -86,11 +108,16 @@ int main(int argc, char* argv[]) {
 		std::cout << "bind() failed: " << WSAGetLastError() << std::endl;
 		closesocket(serverSocket);
 		WSACleanup();
-		return 0;
+		return -1;
 	}
 	else {
 		std::cout << "bind() is OK!" << std::endl;
 	}
+
+	//----------------------------------------------------------------------//
+	//----------------------------------------------------------------------//
+
+	
 
 
 	//Use the bounded function to listen for clients attempting to connect
@@ -108,6 +135,11 @@ int main(int argc, char* argv[]) {
 
 
 
+	//----------------------------------------------------------------------//
+	//----------------------------------------------------------------------//
+
+
+
 	//Accept functionality
 	//Accept function pauses the execution of the server at this point
 	//it will wait until the client has established a connection with the listening
@@ -117,6 +149,63 @@ int main(int argc, char* argv[]) {
 	//to the client socket, the original listening socket is still listening
 	//We need to create another socket variable to store the socket returned by the
 	//accept function
+
+
+	//For a file transfer implementation, we need to create a function to handles the 
+	//connected client and will take the file
+	//We can create a lambda function that will be passed into a thread with the accepted socket
+
+
+
+	//Handle function which is a lambda function
+	auto handleClient = [](SOCKET acceptSocket) {
+
+		std::cout << "Entered thread" << std::endl;
+
+		//Create a 1024mb buffer to recieve the file
+		const int bufferSize = 1024;
+		//create buffer
+		char buffer[bufferSize];
+
+		std::cout << "Buffer size pre recv " << sizeof(buffer) << std::endl;
+
+		//Recieve the file data in chunks
+		std::ofstream outputFile("received_file.txt", std::ios::binary);
+		if (!outputFile) {
+			std::cerr << "Failed to open file for writing" << std::endl;
+			//close the socket to allow other resources to use it
+			closesocket(acceptSocket);
+			return;
+		}
+
+		//Create a variable bytes read, recv returns the number of bytes
+		int bytesRead;
+		
+		//Create a for loop that writes the data until its fully written
+		while ((bytesRead = recv(acceptSocket, buffer, bufferSize, 0)) > 0) {
+
+			//write the data and save it to received_file.dat
+			outputFile.write(buffer, bytesRead);
+			std::cout << "Entered buffer write";
+		}
+		
+
+		std::cout << "Finished writing to disc!! Check your database" << std::endl;
+
+		system("pause");
+
+		//close the output file
+		outputFile.close();
+		//close the socket
+		closesocket(acceptSocket);
+	};
+
+
+	//Create a infinite while loop to represent as server
+	//Create a thread to each connected client and detach it from the main thread
+	//it will end since this is a infinite while loop
+
+	while(true){
 	SOCKET acceptSocket;
 	acceptSocket = accept(serverSocket, NULL, NULL);
 	if (acceptSocket == INVALID_SOCKET) {
@@ -125,10 +214,17 @@ int main(int argc, char* argv[]) {
 		return -1;
 	}
 	else {
-		std::cout << "Accept Success!" << std::endl;
+		/*std::cout << "Accept Success!" << std::endl;*/
 		std::cout << "A client has connected to the Server." << std::endl;
-
 	}
+
+	//Create a thread to run the lambda function
+	//pass in the function and the socket 
+	//detach it from main method
+	std::cout << "going into thread" << std::endl;
+	std::thread(handleClient, acceptSocket).detach();
+	}
+
 
 
 	//We will use the acceptedSocket to communicate w/ the client
@@ -138,51 +234,51 @@ int main(int argc, char* argv[]) {
 		//RECEIEVE
 		//Recieve data incoming from the client with recv
 		//almost the same process
-		const int bufferSize = 200;
-		char recieveBuffer[bufferSize];
+		//const int bufferSize = 200;
+		//char recieveBuffer[bufferSize];
 
 
 
-		int byteCount = recv(acceptSocket, recieveBuffer, bufferSize, 0);
-		if (byteCount < 0) {
-			std::cout << "Client: error " << WSAGetLastError;
-			return 0;
-		}
-		else {
-			//If its successful the recieve buffer will be the reply
-			std::cout << "Client: " << recieveBuffer << std::endl;
-		}
+		//int byteCount = recv(acceptSocket, recieveBuffer, bufferSize, 0);
+		//if (byteCount < 0) {
+		//	std::cout << "Client: error " << WSAGetLastError;
+		//	return 0;
+		//}
+		//else {
+		//	//If its successful the recieve buffer will be the reply
+		//	std::cout << "Client: " << recieveBuffer << std::endl;
+		//}
 
 
 
 
 
-		//SEND
-		const int sendbufferSize = 200;
+		////SEND
+		//const int sendbufferSize = 200;
 
-		//create buffer
-		char sendbuffer[sendbufferSize];
-
-
-
-		//Enter message to be sent to server/client
-		std::cout << "Enter your message:";
-
-		//Store message in buffer
-		std::cin.getline(sendbuffer, sendbufferSize);
-
-		//use the send function to send out the message, and do error handling
-		//send returns an int of the amount of bytes sent
-		int sendbyteCount = send(acceptSocket, sendbuffer, sendbufferSize, 0);
-		if (sendbyteCount == SOCKET_ERROR) {
-			std::cout << "Sever send error: " << WSAGetLastError() << std::endl;
-			return -1;
-		}
-		else {
-			/*std::cout << "Success! Client received: " << sendbyteCount << " bytes of data.." << std::endl;*/
+		////create buffer
+		//char sendbuffer[sendbufferSize];
 
 
-		}
+
+		////Enter message to be sent to server/client
+		//std::cout << "Enter your message:";
+
+		////Store message in buffer
+		//std::cin.getline(sendbuffer, sendbufferSize);
+
+		////use the send function to send out the message, and do error handling
+		////send returns an int of the amount of bytes sent
+		//int sendbyteCount = send(acceptSocket, sendbuffer, sendbufferSize, 0);
+		//if (sendbyteCount == SOCKET_ERROR) {
+		//	std::cout << "Sever send error: " << WSAGetLastError() << std::endl;
+		//	return -1;
+		//}
+		//else {
+		//	/*std::cout << "Success! Client received: " << sendbyteCount << " bytes of data.." << std::endl;*/
+
+
+		//}
 
 	/*}*/
 
