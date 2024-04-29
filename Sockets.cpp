@@ -186,13 +186,11 @@ int main(int argc, char* argv[]) {
 
 			//write the data and save it to received_file.dat
 			outputFile.write(buffer, bytesRead);
-			std::cout << "Entered buffer write";
+			std::cout << "Entered buffer write" << std::endl;
 		}
 		
 
-		std::cout << "Finished writing to disc!! Check your database" << std::endl;
-
-		system("pause");
+		
 
 		//close the output file
 		outputFile.close();
