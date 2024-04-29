@@ -14,16 +14,16 @@
 
 
 int main(int argc, char* argv[]) {
-//Server Side
+	//Server Side
 
-//Specify port number
+	//Specify port number
 	int port = 55555;
 
-//Initialize the DLL
-//Create a wsaData variable to pass into WSAStartup
+	//Initialize the DLL
+	//Create a wsaData variable to pass into WSAStartup
 	WSADATA wsaData;
 
-//WSA method will return an int for if its successful or not
+	//WSA method will return an int for if its successful or not
 	int wsaerr;
 
 	//format the version requested parameter as a WORD variable
@@ -60,7 +60,7 @@ int main(int argc, char* argv[]) {
 		std::cout << "Socket() is OK" << std::endl;
 	}
 
-	
+
 
 
 	//Bind the socket.
@@ -73,10 +73,13 @@ int main(int argc, char* argv[]) {
 	sockaddr_in service;
 	service.sin_family = AF_INET;
 
+	//Test, loopback w/ actual IP
+	//IP
+
 	//Converts IP address to string binary
-	InetPton(AF_INET, (L"127.0.0.1"), &service.sin_addr.s_addr);
+	InetPton(AF_INET, (L"192.168.87.22"), &service.sin_addr.s_addr);
 	service.sin_port = htons(port);
-	
+
 	//Passes in the whole sockaddr data structure, but type casts it first
 	//bind function uses this information to bind to socket
 	if (bind(serverSocket, (SOCKADDR*)&service, sizeof(service)) == SOCKET_ERROR) {
@@ -95,6 +98,7 @@ int main(int argc, char* argv[]) {
 	//2 parameters, the bounded unconnected socket and backlog which is the 
 	//amount of clients that can connect at once
 	//This is the server portion, it just waits here at the specified port for incoming connections
+	//Waits for the connect() function
 	if (listen(serverSocket, 1) == SOCKET_ERROR) {
 		std::cout << "listen(): error listening on socket" << WSAGetLastError() << std::endl;
 	}
@@ -123,17 +127,84 @@ int main(int argc, char* argv[]) {
 	else {
 		std::cout << "Accept Success!" << std::endl;
 		std::cout << "A client has connected to the Server." << std::endl;
+
 	}
+
+
+	//We will use the acceptedSocket to communicate w/ the client
+
+	/*for (int i = 0; i < 1000; i++) {*/
+
+		//RECEIEVE
+		//Recieve data incoming from the client with recv
+		//almost the same process
+		const int bufferSize = 200;
+		char recieveBuffer[bufferSize];
+
+
+
+		int byteCount = recv(acceptSocket, recieveBuffer, bufferSize, 0);
+		if (byteCount < 0) {
+			std::cout << "Client: error " << WSAGetLastError;
+			return 0;
+		}
+		else {
+			//If its successful the recieve buffer will be the reply
+			std::cout << "Client: " << recieveBuffer << std::endl;
+		}
+
+
+
+
+
+		//SEND
+		const int sendbufferSize = 200;
+
+		//create buffer
+		char sendbuffer[sendbufferSize];
+
+
+
+		//Enter message to be sent to server/client
+		std::cout << "Enter your message:";
+
+		//Store message in buffer
+		std::cin.getline(sendbuffer, sendbufferSize);
+
+		//use the send function to send out the message, and do error handling
+		//send returns an int of the amount of bytes sent
+		int sendbyteCount = send(acceptSocket, sendbuffer, sendbufferSize, 0);
+		if (sendbyteCount == SOCKET_ERROR) {
+			std::cout << "Sever send error: " << WSAGetLastError() << std::endl;
+			return -1;
+		}
+		else {
+			/*std::cout << "Success! Client received: " << sendbyteCount << " bytes of data.." << std::endl;*/
+
+
+		}
+
+	/*}*/
+
+
+	
+
+	system("pause");
+	//Close the socket
+	closesocket(serverSocket);
+	//Clean up the socket after program is done
+	WSACleanup();
+
 
 
 
 	
 
 
-	//Close the socket
-	closesocket(serverSocket);
-	//Clean up the socket after program is done
-	WSACleanup();
+
+
+
+
 	
 	return 0;
 }
