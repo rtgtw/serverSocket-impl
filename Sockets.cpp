@@ -1,6 +1,7 @@
-//Bind socket, you bind IP and port number to the socket itself
-//Bound
-//Once the server socket is bound you can pass it into the listen function
+//Project Idea: Cloud File Transfer / Authentication service
+//Project Developers: Remi Olateru
+//The direction o
+
 
 
 
@@ -92,6 +93,10 @@ int main(int argc, char* argv[]) {
 	//We can use the bind function 
 	// A server to specify which port it wants to bind the ip/port the socket to, clients do not, OS handles it
 	//Will bind the data passed to it, to the socket and returns confirmation
+	//Bind socket, you bind IP and port number to the socket itself
+	//Bound
+	//Once the server socket is bound you can pass it into the listen function
+	
 
 	//create a socket address service variable to store ip, port and socket type
 	sockaddr_in service;
