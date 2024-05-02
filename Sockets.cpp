@@ -9,6 +9,8 @@
 #include <WinSock2.h>
 #include <ws2tcpip.h>
 #include <iostream>
+#include <algorithm>
+
 
 //for threading
 #include <thread>
@@ -20,14 +22,14 @@
 
 
 
+
 int main(int argc, char* argv[]) {
 	//Server Side
 
 	//Specify port number
 	int port = 55555;
 
-
-
+	
 
 	//----------------------------------------------------------------------//
 	//----------------------------------------------------------------------//
@@ -167,10 +169,8 @@ int main(int argc, char* argv[]) {
 		//create buffer
 		char buffer[bufferSize];
 
-		std::cout << "Buffer size pre recv " << sizeof(buffer) << std::endl;
-
 		//Recieve the file data in chunks
-		std::ofstream outputFile("received_file.txt", std::ios::binary);
+		std::ofstream outputFile("recieve.exe", std::ios::binary);
 		if (!outputFile) {
 			std::cerr << "Failed to open file for writing" << std::endl;
 			//close the socket to allow other resources to use it
@@ -180,13 +180,18 @@ int main(int argc, char* argv[]) {
 
 		//Create a variable bytes read, recv returns the number of bytes
 		int bytesRead;
+		int totalBytesWritten = 0;
 		
 		//Create a for loop that writes the data until its fully written
 		while ((bytesRead = recv(acceptSocket, buffer, bufferSize, 0)) > 0) {
 
+			
+
 			//write the data and save it to received_file.dat
 			outputFile.write(buffer, bytesRead);
-			std::cout << "Entered buffer write" << std::endl;
+			
+			totalBytesWritten += bytesRead;
+			std::cout << "Bytes Read: " << totalBytesWritten << std::endl;
 		}
 		
 
