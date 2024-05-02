@@ -1,9 +1,3 @@
-//Project Idea: Cloud File Transfer / Authentication service
-//Project Developers: Remi Olateru
-//The direction o
-
-
-
 
  //Server duplicates its socket which is creates a connected status
 //You maintain the original listening socket
