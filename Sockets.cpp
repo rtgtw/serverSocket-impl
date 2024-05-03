@@ -10,8 +10,10 @@
 #include <thread>
 //for  file stream 
 #include <fstream>
+#include <vector>
 
-
+//Create a thred vector for maintaining threads
+std::vector<std::thread> threads;
 
 //Handle function
 //Handle function which is a lambda function
@@ -20,6 +22,40 @@ auto handleClient = [](SOCKET acceptSocket) {
 
 	std::cout << "Entered thread" << std::endl;
 
+	//First thing this process has to do is receive the file path from the client for processing
+	//Create a filename buffer to receive the info
+	char fileNameBuffer[1024];
+	int fileNameSize;
+	//Receive the file name
+	fileNameSize = recv(acceptSocket, fileNameBuffer, sizeof(fileNameBuffer), 0);
+	if (fileNameSize > 0) {
+		std::cout << "Received file name, time for processing...." << std::endl;
+		std::cout << fileNameSize << std::endl;
+	}
+	else {
+		std::cout << "Error while trying to receive file name" << std::endl;
+		system("pause");
+		closesocket(acceptSocket);
+		return;
+	}
+
+	//Retrieve the fileName from the fileName buffer
+	//Place the file path received from the buffer into a filePath string
+	std::string filePath(fileNameBuffer, fileNameSize);
+	
+	//Debugging purposes
+	std::cout << "here is the file name " << filePath.c_str() << " and size " << filePath.size() << std::endl;
+
+	//Now we can take the file path and extract the filename into a substring
+	//size_t represent the pointer pointing at a specific index in the string array
+	size_t fileNameLastPos = filePath.find_last_of("\\") + 1;
+	//Store it inside of a string
+	std::string fileName = filePath.substr(fileNameLastPos);
+	
+	std::cout << "here is just the fileName " << fileName << std::endl;
+
+
+
 	//Create a 1024mb buffer to recieve the file
 	const int bufferSize = 1024;
 	//create buffer
@@ -27,7 +63,7 @@ auto handleClient = [](SOCKET acceptSocket) {
 
 	//Recieve the file data in chunks
 	//Create an output file, and writes the file in binary
-	std::ofstream outputFile("recieve.MOV", std::ios::binary);
+	std::ofstream outputFile(fileName, std::ios::binary);
 	if (!outputFile) {
 		std::cerr << "Failed to open file for writing" << std::endl;
 		//close the socket to allow other resources to use it
@@ -35,7 +71,8 @@ auto handleClient = [](SOCKET acceptSocket) {
 		return;
 	}
 	else {
-		std::cout << "Created a new output file to write to database " << std::endl;
+		std::cout << "Created a new output file to write to database.... " << std::endl;
+		
 	}
 
 	//Create a variable bytes read, 
@@ -52,11 +89,16 @@ auto handleClient = [](SOCKET acceptSocket) {
 
 		//Gets a counter of the total amount of bytes read
 		totalBytesWritten += bytesRead;
-		std::cout << "Bytes Read: " << totalBytesWritten << std::endl;
+		std::cout << "Bytes Read: " << totalBytesWritten << " / " << std::endl;
 	}
 
+	std::cout << "finished writing file to database... " << std::endl;
 	//close the output file
 	outputFile.close();
+
+	//Next step, ask client if they want to send more files
+
+
 	//close the socket
 	closesocket(acceptSocket);
 };
@@ -191,7 +233,7 @@ int main(int argc, char* argv[]) {
 	//This is the server portion, it just waits here at the specified port for incoming connections
 	// It will be in the listening state for the duration of the program, or until the socket is closed
 	//Waits for the connect() function
-	if (listen(serverSocket, 1) == SOCKET_ERROR) {
+	if (listen(serverSocket, 2) == SOCKET_ERROR) {
 		std::cout << "listen (): error listening on socket" << WSAGetLastError() << std::endl;
 	}
 	else {
@@ -247,12 +289,17 @@ int main(int argc, char* argv[]) {
 	else {
 		/*std::cout << "Accept Success!" << std::endl;*/
 		std::cout << "A client has connected to the Server." << std::endl;
-	}
+
 
 	//Create a thread to run the lambda function
 	//pass in the function and the socket 
 	//detach it from main method
-	std::thread(handleClient, acceptSocket).detach();
+	//push it into threads vector
+		std::thread t1(handleClient, acceptSocket);
+		t1.detach();
+		threads.push_back(std::move(t1));
+			}
+	
 	}
 
 
